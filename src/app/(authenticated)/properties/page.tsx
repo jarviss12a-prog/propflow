@@ -18,7 +18,7 @@ interface Property {
   occupied_count: number;
 }
 
-const emptyForm = { name: '', address: '', city: '', state: '', zip: '', type: 'residential', tenant: '', notes: '' };
+const emptyForm = { name: '', address: '', city: '', state: '', zip: '', type: 'residential', notes: '' };
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -45,7 +45,7 @@ export default function PropertiesPage() {
   };
 
   const handleEdit = (p: Property) => {
-    setForm({ name: p.name, address: p.address, city: p.city, state: p.state, zip: p.zip, type: p.type, tenant: (p as any).tenant || '', notes: p.notes || '' });
+    setForm({ name: p.name, address: p.address, city: p.city, state: p.state, zip: p.zip, type: p.type, notes: p.notes || '' });
     setEditId(p.id);
     setShowModal(true);
   };
@@ -143,10 +143,6 @@ export default function PropertiesPage() {
               <option value="commercial">Commercial</option>
               <option value="mixed">Mixed Use</option>
             </select>
-          </div>
-          <div>
-            <label className="label">Tenant</label>
-            <input className="input" value={form.tenant} onChange={e => setForm({ ...form, tenant: e.target.value })} placeholder="Tenant name" />
           </div>
           <div>
             <label className="label">Notes</label>
