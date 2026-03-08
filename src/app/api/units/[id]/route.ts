@@ -8,12 +8,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { unit_number, bedrooms, bathrooms, sqft, rent_amount, section8, status, notes } = body;
+  const { unit_number, bedrooms, bathrooms, sqft, rent_amount, section8, section8_hap, section8_tenant_share, status, notes } = body;
 
   const db = getDb();
   db.prepare(
-    'UPDATE units SET unit_number=?, bedrooms=?, bathrooms=?, sqft=?, rent_amount=?, section8=?, status=?, notes=? WHERE id=?'
-  ).run(unit_number, bedrooms, bathrooms, sqft, rent_amount, section8 ? 1 : 0, status, notes, params.id);
+    'UPDATE units SET unit_number=?, bedrooms=?, bathrooms=?, sqft=?, rent_amount=?, section8=?, section8_hap=?, section8_tenant_share=?, status=?, notes=? WHERE id=?'
+  ).run(unit_number, bedrooms, bathrooms, sqft, rent_amount, section8 ? 1 : 0, section8_hap || 0, section8_tenant_share || 0, status, notes, params.id);
 
   logActivity('unit', `Updated unit ${unit_number}`);
   return NextResponse.json({ success: true });

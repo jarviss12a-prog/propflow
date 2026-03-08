@@ -38,12 +38,12 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { property_id, unit_number, bedrooms, bathrooms, sqft, rent_amount, section8, notes } = body;
+  const { property_id, unit_number, bedrooms, bathrooms, sqft, rent_amount, section8, section8_hap, section8_tenant_share, notes } = body;
 
   const db = getDb();
   const result = db.prepare(
-    'INSERT INTO units (property_id, unit_number, bedrooms, bathrooms, sqft, rent_amount, section8, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(property_id, unit_number, bedrooms || 0, bathrooms || 0, sqft || 0, rent_amount || 0, section8 ? 1 : 0, notes || '');
+    'INSERT INTO units (property_id, unit_number, bedrooms, bathrooms, sqft, rent_amount, section8, section8_hap, section8_tenant_share, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(property_id, unit_number, bedrooms || 0, bathrooms || 0, sqft || 0, rent_amount || 0, section8 ? 1 : 0, section8_hap || 0, section8_tenant_share || 0, notes || '');
 
   logActivity('unit', `Added unit ${unit_number} to property #${property_id}`);
   return NextResponse.json({ id: result.lastInsertRowid }, { status: 201 });
