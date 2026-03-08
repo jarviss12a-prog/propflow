@@ -23,12 +23,12 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { name, address, city, state, zip, type, notes } = body;
+  const { name, address, city, state, zip, type, tenant, notes } = body;
 
   const db = getDb();
   const result = db.prepare(
-    'INSERT INTO properties (name, address, city, state, zip, type, notes) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(name, address, city, state, zip, type || 'residential', notes || '');
+    'INSERT INTO properties (name, address, city, state, zip, type, tenant, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(name, address, city, state, zip, type || 'residential', tenant || '', notes || '');
 
   logActivity('property', `Added property: ${name} at ${address}`);
   return NextResponse.json({ id: result.lastInsertRowid }, { status: 201 });

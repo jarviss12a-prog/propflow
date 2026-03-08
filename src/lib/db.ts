@@ -35,6 +35,7 @@ function initializeDb(db: Database.Database) {
       state TEXT NOT NULL,
       zip TEXT NOT NULL,
       type TEXT DEFAULT 'residential',
+      tenant TEXT,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );

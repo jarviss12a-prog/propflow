@@ -20,16 +20,9 @@ export default function LoginPage() {
     const result = await signIn('credentials', {
       username,
       password,
-      redirect: false,
+      callbackUrl: '/dashboard',
+      redirect: true,
     });
-
-    if (result?.error) {
-      setError('Invalid username or password');
-      setLoading(false);
-    } else {
-      router.push('/');
-      router.refresh();
-    }
   };
 
   return (
