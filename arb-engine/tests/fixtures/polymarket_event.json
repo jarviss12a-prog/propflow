@@ -1,0 +1,29 @@
+{
+  "event": {
+    "slug": "cfb-ttu-cin-2026-10-25",
+    "title": "Texas Tech vs. Cincinnati",
+    "startTime": "2026-10-25T16:00:00Z",
+    "markets": [
+      {
+        "question": "Texas Tech vs. Cincinnati",
+        "active": true,
+        "closed": false,
+        "sportsMarketType": "moneyline",
+        "gameStartTime": "2026-10-25 16:00:00+00",
+        "outcomes": "[\"Texas Tech\", \"Cincinnati\"]",
+        "clobTokenIds": "[\"tok_ttu\", \"tok_cin\"]"
+      },
+      {
+        "question": "Will Texas Tech cover -3.5?",
+        "active": true,
+        "closed": false,
+        "outcomes": "[\"Yes\", \"No\"]",
+        "clobTokenIds": "[\"tok_y\", \"tok_n\"]"
+      }
+    ]
+  },
+  "books": {
+    "tok_ttu": {"bids": [{"price": "0.75", "size": "1000"}], "asks": [{"price": "0.79", "size": "300"}, {"price": "0.77", "size": "150"}]},
+    "tok_cin": {"bids": [{"price": "0.20", "size": "800"}], "asks": [{"price": "0.24", "size": "500"}]}
+  }
+}

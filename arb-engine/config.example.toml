@@ -1,0 +1,84 @@
+# Copy to config.toml and edit. config.toml is git-ignored.
+
+[scan]
+interval_seconds = 30
+min_roi = 0.003            # 0.3% after fees
+min_profit = 2.0           # dollars
+bankroll = 2000            # max total stake per opportunity
+sportsbook_max_stake = 500 # books don't publish limits; cap each sportsbook leg at this
+event_time_window_hours = 6
+match_threshold = 0.82     # team-name similarity needed to treat two listings as the same game
+on_rule_mismatch = "warn"  # "warn" or "skip" when venues settle differently (tennis retirements)
+db_path = "arb.db"
+
+[venues]
+# Only venues you can legally use in your state. Leave empty to allow everything.
+# Keys are The Odds API bookmaker keys plus "kalshi" and "polymarket".
+allowed = [
+  "kalshi", "polymarket", "novig",
+  "draftkings", "fanduel", "betmgm", "williamhill_us", "espnbet", "fanatics",
+  "betrivers", "hardrockbet", "ballybet",
+]
+
+# Fee models: "none", "kalshi" (ceil_cent(coef*C*P*(1-P))), "min_side" (coef*C*min(P,1-P)),
+# "pct_of_stake". VERIFY against each venue's current fee schedule.
+[fees.kalshi]
+model = "kalshi"
+coef = 0.07
+
+[fees.polymarket]
+model = "none"   # most international game markets; Polymarket US charges fees, set them here
+
+[fees.novig]
+model = "none"
+
+# How each venue settles a tennis match when a player retires. Fill these in from each
+# venue's house rules ("void", "one_set_completed", "match_started", ...). Anything left
+# unknown triggers a warning on tennis arbs.
+[rules.tennis_retirement]
+# draftkings = "?"
+# fanduel = "?"
+# kalshi = "?"
+
+# Team-name aliases, normalized form -> canonical form (lowercase, no punctuation).
+[aliases]
+"ohio st" = "ohio state"
+"mich st" = "michigan state"
+"miami fl" = "miami"
+"ole miss" = "mississippi"
+
+[sources.oddsapi]
+enabled = true
+api_key_env = "ODDS_API_KEY"
+regions = "us,us_ex"           # us_ex = US exchanges, where your plan includes them
+markets = "h2h,spreads,totals" # each market x region costs quota per sport per call
+include_tennis = true
+sports = [
+  "americanfootball_nfl",
+  "americanfootball_ncaaf",
+  "basketball_nba",
+  "icehockey_nhl",
+]
+
+[sources.kalshi]
+enabled = true
+base_url = "https://api.elections.kalshi.com/trade-api/v2"
+concurrency = 8
+# Kalshi series ticker -> sport key (must match the Odds API side, see arb/sources/oddsapi.py).
+# VERIFY these with GET /series; Kalshi adds and renames series.
+[sources.kalshi.series]
+KXNFLGAME = "nfl"
+KXNCAAFGAME = "ncaaf"
+KXNBAGAME = "nba"
+KXNHLGAME = "nhl"
+KXATPMATCH = "tennis_atp"
+KXWTAMATCH = "tennis_wta"
+
+[sources.polymarket]
+enabled = false   # international API; US residents need Polymarket US (separate API)
+gamma_url = "https://gamma-api.polymarket.com"
+clob_url = "https://clob.polymarket.com"
+[sources.polymarket.tags]
+nfl = "nfl"
+nba = "nba"
+tennis = "tennis_atp"

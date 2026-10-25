@@ -1,0 +1,39 @@
+[
+  {
+    "id": "evt_ttu_cin",
+    "sport_key": "americanfootball_ncaaf",
+    "commence_time": "2026-10-25T16:00:00Z",
+    "home_team": "Cincinnati Bearcats",
+    "away_team": "Texas Tech Red Raiders",
+    "bookmakers": [
+      {
+        "key": "draftkings",
+        "title": "DraftKings",
+        "markets": [
+          {"key": "h2h", "outcomes": [
+            {"name": "Cincinnati Bearcats", "price": 400},
+            {"name": "Texas Tech Red Raiders", "price": -550}
+          ]},
+          {"key": "spreads", "outcomes": [
+            {"name": "Cincinnati Bearcats", "price": -110, "point": -3.5},
+            {"name": "Texas Tech Red Raiders", "price": -110, "point": 3.5}
+          ]},
+          {"key": "totals", "outcomes": [
+            {"name": "Over", "price": -110, "point": 57.5},
+            {"name": "Under", "price": -110, "point": 57.5}
+          ]}
+        ]
+      },
+      {
+        "key": "fanduel",
+        "title": "FanDuel",
+        "markets": [
+          {"key": "h2h", "outcomes": [
+            {"name": "Cincinnati Bearcats", "price": 360},
+            {"name": "Texas Tech Red Raiders", "price": -480}
+          ]}
+        ]
+      }
+    ]
+  }
+]

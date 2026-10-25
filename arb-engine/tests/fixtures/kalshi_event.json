@@ -1,0 +1,15 @@
+{
+  "event": {
+    "event_ticker": "KXNCAAFGAME-26OCT25TTUCIN",
+    "series_ticker": "KXNCAAFGAME",
+    "title": "Texas Tech at Cincinnati",
+    "markets": [
+      {"ticker": "KXNCAAFGAME-26OCT25TTUCIN-TTU", "yes_sub_title": "Texas Tech", "status": "active"},
+      {"ticker": "KXNCAAFGAME-26OCT25TTUCIN-CIN", "yes_sub_title": "Cincinnati", "status": "active"}
+    ]
+  },
+  "books": {
+    "KXNCAAFGAME-26OCT25TTUCIN-TTU": {"orderbook": {"yes": [[77, 200], [78, 500]], "no": [[18, 100], [19, 300]]}},
+    "KXNCAAFGAME-26OCT25TTUCIN-CIN": {"orderbook": {"yes": [[19, 250], [20, 400]], "no": [[77, 300], [78, 600]]}}
+  }
+}
