@@ -1,0 +1,44 @@
+{% from "_macros.html" import input, money, textarea, err %}
+<fieldset>
+  <legend>Lease</legend>
+  <div class="field{% if errors.get('unit_id') %} bad{% endif %}">
+    <label for="f-unit_id">Property</label>
+    <select id="f-unit_id" name="unit_id" required>
+      <option value="">Choose…</option>
+      {% for u in units %}<option value="{{ u.id }}" {% if form.get('unit_id')|string == u.id|string %}selected{% endif %}>{{ u.label }}</option>{% endfor %}
+    </select>
+    {{ err(errors, 'unit_id') }}
+  </div>
+  {{ money('rent', 'Monthly rent (total)', form, errors, required=True, hint='The full rent, including any Section 8 portion.') }}
+  <div class="grid2">
+    {{ input('start_date', 'Lease start', form, errors, type='date', required=True) }}
+    {{ input('end_date', 'Lease end', form, errors, type='date', optional=True, hint='Blank for month to month.') }}
+  </div>
+  <div class="grid3">
+    {{ input('due_day', 'Due day', form, errors, type='number', attrs='min="1" max="28" inputmode="numeric"') }}
+    {{ input('grace_days', 'Grace days', form, errors, type='number', attrs='min="0" max="27" inputmode="numeric"') }}
+    {{ money('late_fee', 'Late fee', form, errors) }}
+  </div>
+  {{ money('deposit', 'Security deposit held', form, errors, optional=True) }}
+
+  <div class="field">
+    <label class="check"><input id="f-section8" type="checkbox" name="section8" value="1" {% if form.get('section8') and form.get('section8')|string != '0' %}checked{% endif %}>
+      <span>Section 8 / housing assistance</span></label>
+  </div>
+  <div id="s8-fields">
+    <div class="grid2">
+      {{ money('hap', 'Housing authority pays', form, errors, hint='Monthly HAP. The tenant owes the rest.') }}
+      {{ input('s8_case_number', 'Case or voucher #', form, errors, optional=True) }}
+    </div>
+    {{ input('housing_authority', 'Housing authority', form, errors, optional=True) }}
+  </div>
+
+  <details class="more-fields" {% if form.get('opening_balance') not in (None, '', '0.00', '0') or errors.get('ledger_start') %}open{% endif %}>
+    <summary>Balance tracking</summary>
+    <div class="grid2">
+      {{ input('ledger_start', 'Track rent from', form, errors, type='month', hint='First month PropFlow expects rent. Defaults to this month for existing tenants.') }}
+      {{ money('opening_balance', 'Owed before that', form, errors, hint='Past-due amount carried in. Negative for a credit.') }}
+    </div>
+  </details>
+  {{ textarea('lease_notes', 'Lease notes', form, errors, hint='Pets, utilities they pay, parking…') }}
+</fieldset>

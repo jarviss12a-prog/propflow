@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, money, select, textarea, err %}
+{% block title %}{{ 'Edit payment' if row else 'Record payment' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit payment' if row else 'Record payment' }}</h1></div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}<input type="hidden" name="next" value="{{ form.get('next', '') }}">
+  <div class="sheet">
+    <div class="field{% if errors.get('lease_id') %} bad{% endif %}">
+      <label for="f-lease_id">Who paid</label>
+      <select id="f-lease_id" name="lease_id">
+        <option value="">No tenant (pick a property below)</option>
+        {% for l in leases %}<option value="{{ l.id }}" data-property="{{ l.property_id }}" data-rent="{{ l.rent }}" data-hap="{{ l.hap }}"
+          {% if form.get('lease_id')|string == l.id|string %}selected{% endif %}>{{ l.label }}{% if l.moved_out %} (moved out){% endif %}</option>{% endfor %}
+      </select>
+      {{ err(errors, 'lease_id') }}
+    </div>
+
+    <div class="field">
+      <span class="label" id="kind-label">What it's for</span>
+      <div class="choices" role="radiogroup" aria-labelledby="kind-label">
+        {% for k in kinds %}<label><input type="radio" name="kind" value="{{ k.key }}" {% if (form.get('kind') or 'rent') == k.key %}checked{% endif %}><span>{{ k.label }}</span></label>{% endfor %}
+      </div>
+      <div class="hint">Security deposits aren't income until you keep them. Record kept deposits as “Deposit kept”.</div>
+    </div>
+
+    {{ money('amount', 'Amount', form, errors, required=True, attrs='autofocus' if not row else '') }}
+    <div class="grid2">
+      {{ input('date', 'Date received', form, errors, type='date', required=True) }}
+      <div id="month-field">{{ input('applies_to', 'For month', form, errors, type='month', hint='Which month’s rent this covers.') }}</div>
+    </div>
+    <div class="field">
+      <label for="f-method">How they paid <span class="opt">(optional)</span></label>
+      <select id="f-method" name="method"><option value="">–</option>
+        {% for m in methods %}<option {% if form.get('method') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+    </div>
+    <details class="more-fields" {% if form.get('reference') or form.get('notes') or errors.get('property_id') or (not form.get('lease_id') and form.get('property_id')) %}open{% endif %}>
+      <summary>Property, check number, notes</summary>
+      {{ select('property_id', 'Property', form, errors, properties|pairs('id', 'name'), blank='Picked from the tenant', hint='Only needed when no tenant is chosen, like laundry or a pet fee.') }}
+      {{ input('reference', 'Check or confirmation #', form, errors, optional=True) }}
+      {{ textarea('notes', 'Notes', form, errors) }}
+    </details>
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save changes' if row else 'Record payment' }}</button>
+    {% if not row %}<button class="btn" type="submit" name="again" value="1">Record and add another</button>{% endif %}
+    <a class="btn cancel" href="{{ form.get('next') or url_for('money.payments') }}">Cancel</a>
+  </div>
+</form>
+{% if row %}
+<form method="post" action="{{ url_for('money.payment_delete', pay_id=row.id) }}" class="danger-zone form" data-confirm="Delete this payment?">
+  {{ csrf() }}<button class="btn danger" type="submit">Delete payment</button>
+</form>
+{% endif %}
+{% endblock %}

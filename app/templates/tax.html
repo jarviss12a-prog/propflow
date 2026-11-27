@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Taxes {{ year }}{% endblock %}
+{% block content %}
+{% set cols = r.columns %}
+<div class="page-head">
+  <div><h1>Schedule E, {{ year }}</h1>
+    <p class="muted">Supplemental income and loss, one column per property. Hand this and the downloads to your CPA.</p></div>
+  <div class="actions">
+    <a class="btn primary" href="{{ url_for('reports.cpa_zip', year=year, split=0 if not r.split_shared else None) }}">Download for CPA (.zip)</a>
+    <a class="btn" href="{{ url_for('reports.schedule_e_csv', year=year, split=0 if not r.split_shared else None) }}">Schedule E CSV</a>
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <label class="sr" for="fy">Year</label>
+  <select id="fy" name="year" onchange="this.form.submit()">{% for y in years %}<option {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+  <span class="seg" role="group" aria-label="Shared costs">
+    <a href="{{ url_for('reports.tax', year=year) }}" aria-current="{{ 'true' if r.split_shared else 'false' }}">Split shared costs evenly</a>
+    <a href="{{ url_for('reports.tax', year=year, split=0) }}" aria-current="{{ 'false' if r.split_shared else 'true' }}">Show shared separately</a>
+  </span>
+  <noscript><button class="btn small">Show</button></noscript>
+</form>
+
+<section class="sheet">
+  <dl class="figures" style="border-top:0">
+    <div><dt>Rents received (line 3)</dt><dd class="num">{{ r.totals.line3|money0 }}</dd></div>
+    <div><dt>Expenses before depreciation</dt><dd class="num">{{ r.totals.expenses|money0 }}</dd></div>
+    <div><dt>Depreciation estimate</dt><dd class="num">{{ r.totals.depreciation|money0 }}</dd></div>
+    <div><dt>Income or (loss), line 21</dt><dd class="num {{ 'neg' if r.totals.net_after_depr < 0 }}">{{ r.totals.net_after_depr|money0 }}</dd></div>
+  </dl>
+  {% if cols %}
+  <div class="table-wrap">
+    <table class="ledger">
+      <thead><tr><th scope="col">Line</th>
+        {% for c in cols %}<th scope="col">{{ c.property.name }}</th>{% endfor %}
+        {% if not r.split_shared %}<th scope="col">Shared</th>{% endif %}
+        <th scope="col">Total</th></tr></thead>
+      <tbody>
+        {% for line in r.lines %}
+        {% set shared_v = line.shared if (not r.split_shared and line.key != 'line3') else 0 %}
+        {% set total = line['values']|sum + shared_v %}
+        <tr class="{{ 'subtle' if not total or line.estimate }}"><td><span class="ln">{{ line.line }}</span>{{ line.label }}</td>
+          {% for v in line['values'] %}<td class="num {{ 'zero' if not v }}">{% if line.estimate and cols[loop.index0].depreciation is none %}?{% else %}{{ v|money(dash_zero=true) }}{% endif %}</td>{% endfor %}
+          {% if not r.split_shared %}<td class="num {{ 'zero' if not shared_v }}">{{ shared_v|money(dash_zero=true) }}</td>{% endif %}
+          <td class="num">{{ total|money(dash_zero=true) }}</td></tr>
+        {% endfor %}
+        <tr class="total"><td><span class="ln">20</span>Total expenses</td>
+          {% for c in cols %}<td class="num">{{ c.line20|money }}</td>{% endfor %}
+          {% if not r.split_shared %}<td class="num">{{ r.totals.shared|money }}</td>{% endif %}
+          <td class="num">{{ r.totals.line20|money }}</td></tr>
+        <tr class="total"><td><span class="ln">21</span>Income or (loss)</td>
+          {% for c in cols %}<td class="num {{ 'neg' if c.net_after_depr < 0 }}">{{ c.net_after_depr|money }}</td>{% endfor %}
+          {% if not r.split_shared %}<td class="num neg">{{ (-r.totals.shared)|money }}</td>{% endif %}
+          <td class="num {{ 'neg' if r.totals.net_after_depr < 0 }}">{{ r.totals.net_after_depr|money }}</td></tr>
+        <tr class="subtle"><td>Net before depreciation</td>
+          {% for c in cols %}<td class="num">{{ c.net_before_depr|money }}</td>{% endfor %}
+          {% if not r.split_shared %}<td class="num">{{ (-r.totals.shared)|money }}</td>{% endif %}
+          <td class="num">{{ r.totals.net_before_depr|money }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    Depreciation is a straight-line 27.5-year estimate on purchase price minus land, using the mid-month rule. It leaves out capital improvements and anything your CPA has already set up, so their schedule wins.
+    {% if missing_basis %}<br>No estimate for {{ missing_basis|join(', ') }}: add the purchase date and price on the property.{% endif %}
+    {% if r.totals.shared %}<br>{{ r.totals.shared|money }} of shared costs {{ 'is split evenly across the properties above' if r.split_shared else 'is shown in its own column' }}.{% endif %}
+  </div>
+  {% else %}
+  <div class="empty">Nothing recorded for {{ year }} yet.</div>
+  {% endif %}
+</section>
+
+{% if cols %}
+<section class="sheet">
+  <div class="sheet-head"><h2>Also needed by your CPA</h2></div>
+  <p class="muted" style="padding:0 16px">Tracked, but not deducted on Schedule E.</p>
+  <div class="table-wrap">
+    <table class="ledger">
+      <thead><tr><th scope="col">Item</th>{% for c in cols %}<th scope="col">{{ c.property.name }}</th>{% endfor %}{% if not r.split_shared %}<th scope="col">Shared</th>{% endif %}<th scope="col">Total</th></tr></thead>
+      <tbody>
+        {% for nd in r.not_deductible %}
+        {% set shared_v = nd.shared if not r.split_shared else 0 %}
+        {% set total = nd['values']|sum + shared_v %}
+        <tr {% if not total %}class="subtle"{% endif %}><td>{{ nd.label }}</td>
+          {% for v in nd['values'] %}<td class="num {{ 'zero' if not v }}">{{ v|money(dash_zero=true) }}</td>{% endfor %}
+          {% if not r.split_shared %}<td class="num">{{ shared_v|money(dash_zero=true) }}</td>{% endif %}
+          <td class="num">{{ total|money(dash_zero=true) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="note">Security deposits held at the end of {{ year }}: <strong class="num">{{ r.deposits_held|money }}</strong>. Deposits are a liability, not income, until you keep one.</div>
+</section>
+{% endif %}
+<p class="muted" style="margin-top:16px">PropFlow organizes your records. It isn't tax advice; confirm the return with your CPA.</p>
+{% endblock %}

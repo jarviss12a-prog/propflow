@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, money, err %}
+{% block title %}Mortgage payment{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Mortgage payment</h1>
+  <p class="muted">Split one payment from your statement. Only the interest is deductible; principal and escrow are tracked so cash flow still adds up.</p></div></div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    <div class="field{% if errors.get('property_id') %} bad{% endif %}">
+      <label for="f-mortgage-property">Property</label>
+      <select id="f-mortgage-property" name="property_id" required>
+        <option value="">Choose…</option>
+        {% for p in properties %}<option value="{{ p.id }}" {% if form.get('property_id')|string == p.id|string %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+      <div class="hint">Picking a property fills in last month's split.</div>
+      {{ err(errors, 'property_id') }}
+    </div>
+    <div class="grid2">
+      {{ input('date', 'Date paid', form, errors, type='date', required=True) }}
+      {{ input('vendor', 'Lender', form, errors, optional=True) }}
+    </div>
+    <div class="grid3">
+      {{ money('interest', 'Interest', form, errors) }}
+      {{ money('principal', 'Principal', form, errors, optional=False) }}
+      {{ money('escrow', 'Escrow', form, errors) }}
+    </div>
+    <p class="hint">When your lender pays property tax or insurance out of escrow, log those bills under Taxes and Insurance. At year end, check the interest total against your Form 1098.</p>
+    <div class="field">
+      <label for="f-method">Paid with <span class="opt">(optional)</span></label>
+      <select id="f-method" name="method"><option value="">–</option>
+        {% for m in methods %}<option {% if form.get('method') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+    </div>
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">Log mortgage payment</button>
+    <a class="btn cancel" href="{{ url_for('money.expenses') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

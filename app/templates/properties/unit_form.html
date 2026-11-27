@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, money, textarea %}
+{% block title %}{{ 'Edit unit' if u else 'Add unit' }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ 'Edit ' + u.label if u else 'Add unit' }}</h1><p class="muted">{{ p.name }}</p></div></div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    {{ input('label', 'Unit name', form, errors, hint='Like “Unit B”, “Upstairs” or “Main”.') }}
+    <div class="grid3">
+      {{ input('beds', 'Beds', form, errors, type='number', attrs='step="1" min="0" inputmode="numeric"') }}
+      {{ input('baths', 'Baths', form, errors, type='number', attrs='step="0.5" min="0" inputmode="decimal"') }}
+      {{ input('sqft', 'Sq ft', form, errors, type='number', attrs='min="0" inputmode="numeric"') }}
+    </div>
+    {{ money('market_rent', 'Asking rent', form, errors, optional=True) }}
+    {{ textarea('notes', 'Notes', form, errors) }}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save changes' if u else 'Add unit' }}</button>
+    <a class="btn cancel" href="{{ url_for('properties.show', pid=p.id) }}">Cancel</a>
+  </div>
+</form>
+{% if u %}
+<form method="post" action="{{ url_for('properties.unit_delete', uid=u.id) }}" class="danger-zone form" data-confirm="Delete {{ u.label }}?">
+  {{ csrf() }}<button class="btn danger" type="submit">Delete unit</button>
+</form>
+{% endif %}
+{% endblock %}

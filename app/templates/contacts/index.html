@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Contacts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Contacts</h1><p class="muted">Contractors, lenders, insurance, the housing authority. {{ year }} spend is from expenses paid to them.</p></div>
+  <a class="btn primary" href="{{ url_for('crm.contact_new') }}">Add contact</a>
+</div>
+<form class="filters" method="get">
+  <label class="sr" for="q">Search</label>
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search name, trade, notes">
+  <button class="btn small" type="submit">Search</button>
+  {% if q %}<a class="btn small" href="{{ url_for('crm.contacts') }}">Clear</a>{% endif %}
+</form>
+<section class="sheet">
+  {% if groups %}
+    {% for role, items in groups.items() %}
+    <div class="month-label" {% if loop.first %}style="border-top:0"{% endif %}><span>{{ role }}</span><span>{{ items|length }}</span></div>
+    <ul class="rows">
+      {% for c in items %}
+      <li><div class="row">
+        <a class="title" href="{{ url_for('crm.contact_edit', cid=c.id) }}">{{ c.name }}</a>
+        <span class="amt num">{% if c.spent_year %}{{ c.spent_year|money0 }}{% endif %}</span>
+        <span class="sub">{% if c.company %}{{ c.company }} · {% endif %}{% if c.phone %}<a href="tel:{{ c.phone|tel }}">{{ c.phone }}</a>{% endif %}{% if c.email %} · <a href="mailto:{{ c.email }}">{{ c.email }}</a>{% endif %}</span>
+      </div></li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+  {% else %}
+  <div class="empty">{% if q %}No contacts match “{{ q }}”.{% else %}No contacts yet. Save the plumber you trust and the housing authority caseworker here.{% endif %}<br><a class="btn" href="{{ url_for('crm.contact_new') }}">Add contact</a></div>
+  {% endif %}
+</section>
+{% endblock %}

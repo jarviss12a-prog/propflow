@@ -1,0 +1,110 @@
+{% extends "base.html" %}{% from "_macros.html" import files_block, stamp %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ p.name }}{% if p.archived %} <span class="tag grey">Archived</span>{% endif %}</h1>
+    <p class="muted">{{ p.address }}{% if p.city %}, {{ p.city }}, {{ p.state }} {{ p.zip }}{% endif %} · {{ types.get(p.property_type, '') }}</p></div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('properties.edit', pid=p.id) }}">Edit</a>
+    <a class="btn" href="{{ url_for('money.expense_new', property_id=p.id, next=request.path) }}">Log expense</a>
+  </div>
+</div>
+
+<div class="cols">
+  <div>
+    <section class="sheet">
+      <div class="sheet-head"><h2>{{ 'Units' if units|length > 1 else 'Tenant' }}</h2><a href="{{ url_for('properties.unit_new', pid=p.id) }}">Add unit</a></div>
+      <ul class="rows">
+        {% for u in units %}
+        {% set c = current.get(u.id) %}
+        <li>
+          {% if c %}
+          <a class="row" href="{{ url_for('tenants.show', tid=c.lease.tenant_id) }}">
+            <span class="title">{% if units|length > 1 %}{{ u.label }}: {% endif %}{{ c.lease.tenant_name }}</span>
+            <span class="amt num">{{ c.lease.rent_cents|money0 }}/mo</span>
+            <span class="sub">Since {{ c.lease.start_date|d }}{% if c.lease.end_date %} · lease ends {{ c.lease.end_date|d }}{% endif %}{% if c.lease.section8 %} · Section 8{% endif %}</span>
+            <span class="amt-sub num {{ 'out' if c.balance > 0 }}">{% if c.balance > 0 %}owes {{ c.balance|money }}{% elif c.balance < 0 %}{{ (-c.balance)|money }} credit{% else %}paid up{% endif %}</span>
+          </a>
+          {% else %}
+          <div class="row">
+            <span class="title">{% if units|length > 1 %}{{ u.label }}: {% endif %}<span class="out">Vacant</span></span>
+            <span class="amt"><a class="btn small" href="{{ url_for('tenants.new', unit_id=u.id) }}">Add tenant</a></span>
+            <span class="sub">{% if u.market_rent_cents %}Asking {{ u.market_rent_cents|money0 }}{% endif %} <a href="{{ url_for('properties.unit_edit', uid=u.id) }}">Edit unit</a></span>
+          </div>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% for l in future %}<div class="note">{{ l.tenant_name }} starts {{ l.start_date|d }}.</div>{% endfor %}
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h2>Recent payments</h2><a href="{{ url_for('money.payments', property=p.id) }}">All</a></div>
+      {% if payments %}
+      <ul class="rows">{% for r in payments %}
+        <li><a class="row" href="{{ url_for('money.payment_edit', pay_id=r.id) }}"><span class="title">{{ r.tenant_name or (r.kind|kind) }}</span>
+          <span class="amt num in">{{ r.amount_cents|money }}</span><span class="sub">{{ r.date|dshort }} · {{ r.kind|kind }}</span></a></li>
+      {% endfor %}</ul>
+      {% else %}<div class="empty">No payments recorded.</div>{% endif %}
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h2>Recent expenses</h2><a href="{{ url_for('money.expenses', property=p.id) }}">All</a></div>
+      {% if expenses %}
+      <ul class="rows">{% for r in expenses %}
+        <li><a class="row" href="{{ url_for('money.expense_edit', eid=r.id) }}"><span class="title">{{ r.vendor or (r.category|cat) }}</span>
+          <span class="amt num">{{ r.amount_cents|money }}</span><span class="sub">{{ r.date|dshort }} · {{ r.category|cat }}</span></a></li>
+      {% endfor %}</ul>
+      {% else %}<div class="empty">No expenses logged.</div>{% endif %}
+    </section>
+  </div>
+
+  <div>
+    <section class="sheet">
+      <div class="sheet-head"><h2>{{ year }}</h2><a href="{{ url_for('reports.tax', year=year) }}">Schedule E</a></div>
+      <dl class="figures">
+        <div><dt>Income</dt><dd class="num">{{ income|money0 }}</dd></div>
+        <div><dt>Expenses</dt><dd class="num">{{ expenses_total|money0 }}</dd></div>
+        <div><dt>Net</dt><dd class="num {{ 'neg' if income - expenses_total < 0 }}">{{ (income - expenses_total)|money0 }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h2>Details</h2></div>
+      <div class="sheet-body">
+        <dl class="kv">
+          {% if p.owner_entity %}<dt>Owned by</dt><dd>{{ p.owner_entity }}</dd>{% endif %}
+          <dt>Purchased</dt><dd>{{ p.purchase_date|d or '–' }}{% if p.purchase_price_cents %} for {{ p.purchase_price_cents|money0 }}{% endif %}</dd>
+          {% if p.land_value_cents %}<dt>Land value</dt><dd>{{ p.land_value_cents|money0 }}</dd>{% endif %}
+          {% if p.mortgage_lender %}<dt>Lender</dt><dd>{{ p.mortgage_lender }} · <a href="{{ url_for('money.mortgage', property_id=p.id) }}">Log payment</a></dd>{% endif %}
+        </dl>
+        {% if p.notes %}<p style="margin-top:12px;white-space:pre-line">{{ p.notes }}</p>{% endif %}
+        {% if not p.purchase_price_cents %}<p class="muted" style="margin-top:12px">Add the purchase price and land value to get a depreciation estimate on the tax page.</p>{% endif %}
+      </div>
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h2>Maintenance</h2><a href="{{ url_for('crm.work_new', property_id=p.id) }}">Add</a></div>
+      {% if work %}
+      <ul class="rows">{% for w in work %}
+        <li><a class="row" href="{{ url_for('crm.work_edit', wid=w.id) }}"><span class="title">{{ w.title }}</span>
+          <span class="amt">{% if w.status == 'done' %}<span class="tag grey">Done</span>{% elif w.urgent %}<span class="tag red">Urgent</span>{% else %}<span class="tag amber">{{ w.status|capitalize }}</span>{% endif %}</span>
+          <span class="sub">Opened {{ w.opened_on|dshort }}</span></a></li>
+      {% endfor %}</ul>
+      {% else %}<div class="empty">No maintenance logged.</div>{% endif %}
+    </section>
+
+    {{ files_block(files, 'property', p.id, request.path, 'Documents') }}
+
+    {% if past %}
+    <section class="sheet">
+      <div class="sheet-head"><h2>Past tenants</h2></div>
+      <ul class="rows">{% for l in past %}
+        <li><a class="row" href="{{ url_for('tenants.show', tid=l.tenant_id) }}"><span class="title">{{ l.tenant_name }}</span>
+          <span class="sub">{{ l.start_date|d }} to {{ l.move_out_date|d }}</span></a></li>
+      {% endfor %}</ul>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

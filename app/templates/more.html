@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% from "_macros.html" import icon, csrf %}
+{% block title %}More{% endblock %}
+{% block content %}
+<div class="page-head"><h1>More</h1></div>
+<section class="sheet">
+  <ul class="rows">
+    <li style="border-top:0"><a class="row" href="{{ url_for('properties.index') }}"><span class="title">Properties</span><span class="amt muted">{{ counts.properties }}</span><span class="sub">Addresses, units, purchase details</span></a></li>
+    <li><a class="row" href="{{ url_for('tenants.index') }}"><span class="title">Tenants</span><span class="sub">Leases, balances, Section 8</span></a></li>
+    <li><a class="row" href="{{ url_for('money.payments') }}"><span class="title">All payments</span><span class="sub">Every dollar in, by month</span></a></li>
+    <li><a class="row" href="{{ url_for('crm.maintenance') }}"><span class="title">Maintenance</span><span class="amt muted">{{ counts.open_work }} open</span><span class="sub">Repairs and requests to track</span></a></li>
+    <li><a class="row" href="{{ url_for('crm.contacts') }}"><span class="title">Contacts</span><span class="amt muted">{{ counts.contacts }}</span><span class="sub">Contractors, lenders, housing authority</span></a></li>
+    <li><a class="row" href="{{ url_for('imports.index') }}"><span class="title">Import a spreadsheet</span><span class="sub">Properties, tenants, payments or expenses from CSV</span></a></li>
+  </ul>
+</section>
+<section class="sheet">
+  <ul class="rows">
+    <li style="border-top:0"><a class="row" href="{{ url_for('auth.change_password') }}"><span class="title">Change password</span></a></li>
+    <li><form method="post" action="{{ url_for('auth.logout') }}">{{ csrf() }}<button class="row btn link" style="width:100%;justify-content:flex-start;padding:12px 16px;min-height:56px" type="submit">Sign out</button></form></li>
+  </ul>
+</section>
+{% endblock %}

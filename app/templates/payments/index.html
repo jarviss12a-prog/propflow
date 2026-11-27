@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Payments {{ year }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Payments</h1><p class="muted">Money in for {{ year }}.</p></div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('reports.payments_csv', year=year) }}">Download CSV</a>
+    <a class="btn primary" href="{{ url_for('money.payment_new') }}">Record payment</a>
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <label class="sr" for="fy">Year</label>
+  <select id="fy" name="year" onchange="this.form.submit()">{% for y in years %}<option {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+  <label class="sr" for="fp">Property</label>
+  <select id="fp" name="property" onchange="this.form.submit()">
+    <option value="">All properties</option>
+    {% for p in properties %}<option value="{{ p.id }}" {% if pid == p.id %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+  </select>
+  <label class="sr" for="fk">Type</label>
+  <select id="fk" name="kind" onchange="this.form.submit()">
+    <option value="">All types</option>
+    {% for k in kinds %}<option value="{{ k.key }}" {% if kind == k.key %}selected{% endif %}>{{ k.label }}</option>{% endfor %}
+  </select>
+  <noscript><button class="btn small">Show</button></noscript>
+</form>
+
+<section class="sheet">
+  <dl class="figures" style="border-top:0">
+    <div><dt>Income</dt><dd class="num in">{{ income|money }}</dd></div>
+    <div><dt>Deposits received</dt><dd class="num">{{ held|money }}</dd></div>
+    <div><dt>Payments</dt><dd>{{ count }}</dd></div>
+  </dl>
+  {% if groups %}
+    {% for m, items in groups.items() %}
+    <div class="month-label"><span>{{ m|month }}</span><span class="num">{{ items|sum(attribute='amount_cents')|money }}</span></div>
+    <ul class="rows">
+      {% for r in items %}
+      <li><a class="row" href="{{ url_for('money.payment_edit', pay_id=r.id) }}">
+        <span class="title">{{ r.tenant_name or r.property_name }}</span>
+        <span class="amt num {{ 'neg' if r.amount_cents < 0 else 'in' }}">{{ r.amount_cents|money }}</span>
+        <span class="sub">{{ r.date|dshort }} · {{ r.kind|kind }}{% if r.applies_to and r.applies_to != r.date[:7] %} for {{ r.applies_to|mshort }}{% endif %}{% if r.tenant_name %} · {{ r.property_name }}{% endif %}{% if r.method %} · {{ r.method }}{% endif %}</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+  {% else %}
+  <div class="empty">No payments match. <br><a class="btn" href="{{ url_for('money.payment_new') }}">Record a payment</a> <a class="btn" href="{{ url_for('imports.index', kind='payments') }}">Import from CSV</a></div>
+  {% endif %}
+</section>
+{% endblock %}

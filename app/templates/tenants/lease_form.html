@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input %}
+{% block title %}{{ 'Edit lease' if l else 'New lease' }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ 'Edit lease' if l else ('Renew lease' if renewal else 'New lease') }}</h1><p class="muted">{{ t.name }}</p></div></div>
+{% if renewal %}<p class="muted form">The new lease starts fresh. Set a move-out date on the old one so rent isn't expected twice.</p>{% endif %}
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    {% include "tenants/_lease_fields.html" %}
+    {% if l %}
+    {{ input('move_out_date', 'Moved out', form, errors, type='date', optional=True, hint='Rent stops being expected after this month.') }}
+    {% endif %}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save lease' if l else 'Add lease' }}</button>
+    <a class="btn cancel" href="{{ url_for('tenants.show', tid=t.id) }}">Cancel</a>
+  </div>
+</form>
+{% if l %}
+<form method="post" action="{{ url_for('tenants.lease_delete', lid=l.id) }}" class="danger-zone form" data-confirm="Delete this lease? Payments stay in your income.">
+  {{ csrf() }}<button class="btn danger" type="submit">Delete lease</button>
+</form>
+{% endif %}
+{% endblock %}

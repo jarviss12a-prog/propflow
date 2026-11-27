@@ -1,0 +1,50 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, money, select, textarea %}
+{% block title %}{{ 'Edit ' + p.name if p else 'Add property' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit ' + p.name if p else 'Add property' }}</h1></div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    <fieldset>
+      <legend>The property</legend>
+      {{ input('name', 'Short name', form, errors, required=True, hint='What you call it, like “Maple St” or “Elm Duplex”.', attrs='autofocus' if not p else '') }}
+      {{ input('address', 'Street address', form, errors) }}
+      <div class="grid3">
+        {{ input('city', 'City', form, errors) }}
+        {{ input('state', 'State', form, errors, attrs='maxlength="2" autocapitalize="characters"') }}
+        {{ input('zip', 'ZIP', form, errors, attrs='inputmode="numeric"') }}
+      </div>
+      <div class="grid2">
+        {{ select('property_type', 'Type', form, errors, types) }}
+        {% if not p %}{{ input('unit_count', 'Units', form, errors, type='number', attrs='min="1" max="60" inputmode="numeric"') }}{% endif %}
+      </div>
+      {{ input('owner_entity', 'Owned by', form, errors, optional=True, hint='Your name or the LLC on the deed. Useful once you move everything into the LLC.') }}
+    </fieldset>
+    <details class="more-fields" {% if form.get('purchase_price') or form.get('purchase_date') or errors %}open{% endif %}>
+      <summary>Purchase and mortgage details (for depreciation)</summary>
+      <div class="grid2">
+        {{ input('purchase_date', 'Purchase date', form, errors, type='date') }}
+        {{ input('placed_in_service', 'First available to rent', form, errors, type='date', hint='Leave blank if it’s the purchase date.') }}
+      </div>
+      <div class="grid2">
+        {{ money('purchase_price', 'Purchase price', form, errors, hint='Include closing costs your CPA added to basis.') }}
+        {{ money('land_value', 'Land value', form, errors, hint='From your county assessment. Land isn’t depreciated.') }}
+      </div>
+      {{ input('mortgage_lender', 'Mortgage lender', form, errors, optional=True) }}
+    </details>
+    {{ textarea('notes', 'Notes', form, errors, hint='Parcel number, gate code, utility accounts…') }}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save changes' if p else 'Add property' }}</button>
+    <a class="btn cancel" href="{{ url_for('properties.show', pid=p.id) if p else url_for('properties.index') }}">Cancel</a>
+  </div>
+</form>
+{% if p %}
+<div class="danger-zone form actions">
+  <form method="post" action="{{ url_for('properties.archive', pid=p.id) }}" class="inline">{{ csrf() }}
+    <button class="btn" type="submit">{{ 'Restore property' if p.archived else 'Archive (sold or no longer rented)' }}</button></form>
+  <form method="post" action="{{ url_for('properties.delete', pid=p.id) }}" class="inline" data-confirm="Delete {{ p.name }} for good?">{{ csrf() }}
+    <button class="btn danger" type="submit">Delete</button></form>
+</div>
+{% endif %}
+{% endblock %}

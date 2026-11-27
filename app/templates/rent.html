@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Rent roll {{ ym|mshort }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Rent roll</h1><p class="muted">Who has paid for {{ ym|month }}. Rent and Section 8 payments are matched by the month they cover.</p></div>
+  <div class="month-nav">
+    <a href="{{ url_for('money.rent', month=prev, property=pid or None) }}" aria-label="Previous month">‹</a>
+    <strong style="min-width:96px;text-align:center">{{ ym|mshort }}</strong>
+    <a href="{{ url_for('money.rent', month=next, property=pid or None) }}" aria-label="Next month">›</a>
+    {% if ym != this %}<a href="{{ url_for('money.rent', property=pid or None) }}" style="width:auto;padding:0 12px;font-size:.9375rem">This month</a>{% endif %}
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <input type="hidden" name="month" value="{{ ym }}">
+  <label class="sr" for="fp">Property</label>
+  <select id="fp" name="property" onchange="this.form.submit()">
+    <option value="">All properties</option>
+    {% for p in properties %}<option value="{{ p.id }}" {% if pid == p.id %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+  </select>
+  <noscript><button class="btn small">Show</button></noscript>
+</form>
+
+<section class="sheet">
+  {% if rows %}
+  <dl class="figures" style="border-top:0">
+    <div><dt>Expected</dt><dd class="num">{{ summary.expected|money }}</dd></div>
+    <div><dt>Collected</dt><dd class="num in">{{ summary.received|money }}</dd></div>
+    <div><dt>Late or short</dt><dd class="num {{ 'out' if summary.outstanding }}">{{ summary.outstanding|money }}</dd></div>
+    <div><dt>Paid</dt><dd>{{ summary.paid }} of {{ summary.count }}</dd></div>
+  </dl>
+  {% with rows=rows, show_actions=true %}{% include "_roll.html" %}{% endwith %}
+  {% else %}
+  <div class="empty">No leases were active in {{ ym|month }}.<br><a class="btn" href="{{ url_for('tenants.new') }}">Add a tenant</a></div>
+  {% endif %}
+</section>
+{% endblock %}

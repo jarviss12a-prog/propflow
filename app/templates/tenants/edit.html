@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, textarea %}
+{% block title %}Edit {{ t.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Edit {{ t.name }}</h1></div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    {{ input('name', 'Name', form, errors, required=True) }}
+    <div class="grid2">
+      {{ input('phone', 'Phone', form, errors, type='tel', optional=True) }}
+      {{ input('email', 'Email', form, errors, type='email', optional=True) }}
+    </div>
+    {{ textarea('tenant_notes', 'Notes', form, errors, hint='Emergency contact, vehicle, anything to remember.') }}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">Save changes</button>
+    <a class="btn cancel" href="{{ url_for('tenants.show', tid=t.id) }}">Cancel</a>
+  </div>
+</form>
+<form method="post" action="{{ url_for('tenants.delete', tid=t.id) }}" class="danger-zone form" data-confirm="Delete {{ t.name }} and their leases? Their payments stay in your income.">
+  {{ csrf() }}<input type="hidden" name="confirm" value="yes"><button class="btn danger" type="submit">Delete tenant</button>
+</form>
+{% endblock %}
