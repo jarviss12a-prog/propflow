@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}
+{% block title %}Import{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Import a spreadsheet</h1>
+  <p class="muted">Save your sheet as CSV, upload it, and check the preview before anything is added.</p></div></div>
+<div class="filters"><span class="seg" role="group" aria-label="What to import">
+  {% for k, l in labels.items() %}<a href="{{ url_for('imports.index', kind=k) }}" aria-current="{{ 'true' if k == kind else 'false' }}">{{ l.split(' ')[0] }}</a>{% endfor %}
+</span></div>
+<div class="cols">
+  <form method="post" enctype="multipart/form-data" class="form">
+    {{ csrf() }}<input type="hidden" name="kind" value="{{ kind }}">
+    <div class="sheet">
+      <h2 style="margin-bottom:14px">{{ labels[kind] }}</h2>
+      <div class="field"><label for="file">CSV file</label><input id="file" type="file" name="file" accept=".csv,text/csv"></div>
+      <div class="field"><label for="pasted">Or paste rows <span class="opt">(header row first)</span></label>
+        <textarea id="pasted" name="pasted" rows="6" placeholder="{{ cols|join(',') }}" style="font-size:14px"></textarea></div>
+      <div class="field"><button class="btn primary" type="submit">Preview import</button>
+        <a class="btn" href="{{ url_for('imports.template', kind=kind) }}">Download template</a></div>
+    </div>
+  </form>
+  <section class="sheet">
+    <div class="sheet-head"><h2>Columns</h2></div>
+    <div class="sheet-body">
+      <p class="muted">Order doesn't matter, and common header names are recognized (e.g. “Paid to” for vendor). Required: <strong>{{ required|join(', ') }}</strong>.</p>
+      <p><code style="font-size:.875rem;overflow-wrap:anywhere">{{ cols|join(', ') }}</code></p>
+      {% if kind == 'expenses' %}
+      <p class="muted">Leave property blank or write “shared” for portfolio-wide costs. Categories (key or name):</p>
+      <ul class="rows" style="margin:0 -16px">{% for c in categories %}<li><div class="row" style="min-height:0;padding:8px 16px"><span class="title">{{ c.label }}</span><span class="amt muted" style="font-weight:400">{{ c.key }}</span></div></li>{% endfor %}</ul>
+      {% elif kind == 'payments' %}
+      <p class="muted">Tenant names must match PropFlow exactly (case doesn't matter). <strong>type</strong> is one of: {% for k in kinds %}{{ k.label|lower }}{{ ', ' if not loop.last }}{% endfor %}. Blank means rent. <strong>month</strong> is the rent month it covers (2026-03); blank uses the payment date.</p>
+      {% elif kind == 'tenants' %}
+      <p class="muted">Import properties first. Each row creates the tenant and their lease. Write <strong>yes</strong> under section8 and the housing authority's monthly amount under <strong>hap</strong>.</p>
+      {% else %}
+      <p class="muted">Each property gets its units created automatically from the units column (1 = single family).</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

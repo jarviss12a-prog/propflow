@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, select, textarea, files_block %}
+{% block title %}{{ w.title if w else 'Add maintenance item' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ w.title if w else 'Add maintenance item' }}</h1>
+  {% if w %}<div class="actions"><a class="btn" href="{{ url_for('money.expense_new', property_id=w.property_id, maintenance_id=w.id, category='repairs', notes=w.title, next=request.path) }}">Log the bill</a></div>{% endif %}</div>
+<div class="cols">
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    {{ input('title', 'What needs doing', form, errors, required=True, attrs='autofocus' if not w else '') }}
+    {{ select('property_id', 'Property', form, errors, properties|pairs('id', 'name'), blank='Choose…') }}
+    <div class="grid2">
+      {{ select('tenant_id', 'Reported by', form, errors, tenants|pairs('id', 'name'), blank='–', optional=True) }}
+      {{ select('contact_id', 'Assigned to', form, errors, contacts|pairs('id', 'name'), blank='–', optional=True) }}
+    </div>
+    <div class="field"><span class="label" id="st">Status</span>
+      <div class="choices" role="radiogroup" aria-labelledby="st">
+        {% for v, l in statuses %}<label><input type="radio" name="status" value="{{ v }}" {% if (form.get('status') or 'open') == v %}checked{% endif %}><span>{{ l }}</span></label>{% endfor %}
+      </div></div>
+    <div class="field"><label class="check"><input type="checkbox" name="urgent" value="1" {% if form.get('urgent') and form.get('urgent')|string != '0' %}checked{% endif %}><span>Urgent (no heat, water leak, no power)</span></label></div>
+    <div class="grid3">
+      {{ input('opened_on', 'Opened', form, errors, type='date', required=True) }}
+      {{ input('scheduled_for', 'Scheduled', form, errors, type='date') }}
+      {{ input('closed_on', 'Finished', form, errors, type='date') }}
+    </div>
+    {{ textarea('details', 'Details', form, errors, hint='What the tenant said, access instructions, quotes…') }}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save changes' if w else 'Add item' }}</button>
+    <a class="btn cancel" href="{{ url_for('crm.maintenance') }}">Cancel</a>
+  </div>
+  {% if w %}
+  <div class="danger-zone"><button class="btn danger" type="submit" form="del-work">Delete item</button></div>
+  {% endif %}
+</form>
+{% if w %}
+<div>
+  <section class="sheet">
+    <div class="sheet-head"><h2>Costs</h2></div>
+    {% if costs %}
+    <ul class="rows">{% for e in costs %}
+      <li><a class="row" href="{{ url_for('money.expense_edit', eid=e.id) }}"><span class="title">{{ e.vendor or (e.category|cat) }}</span>
+        <span class="amt num">{{ e.amount_cents|money }}</span><span class="sub">{{ e.date|d }} · {{ e.category|cat }}</span></a></li>
+    {% endfor %}</ul>
+    {% else %}<div class="empty">No bills linked yet. Use “Log the bill” so it counts on Schedule E.</div>{% endif %}
+  </section>
+  {{ files_block(files, 'maintenance', w.id, request.path, 'Photos and quotes') }}
+</div>
+<form id="del-work" method="post" action="{{ url_for('crm.work_delete', wid=w.id) }}" data-confirm="Delete this maintenance item?">{{ csrf() }}</form>
+{% endif %}
+</div>
+{% endblock %}

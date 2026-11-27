@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, textarea %}
+{% block title %}Add tenant{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Add tenant</h1></div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    <fieldset>
+      <legend>Tenant</legend>
+      {{ input('name', 'Name', form, errors, required=True, attrs='autofocus autocomplete="off"', hint='Put co-tenants together, like “Jane & Sam Doe”.') }}
+      <div class="grid2">
+        {{ input('phone', 'Phone', form, errors, type='tel', optional=True) }}
+        {{ input('email', 'Email', form, errors, type='email', optional=True) }}
+      </div>
+    </fieldset>
+    {% include "tenants/_lease_fields.html" %}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">Add tenant</button>
+    <a class="btn cancel" href="{{ url_for('tenants.index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

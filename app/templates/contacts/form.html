@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, select, textarea %}
+{% block title %}{{ 'Edit ' + c.name if c else 'Add contact' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ c.name if c else 'Add contact' }}</h1>
+  {% if c and c.phone %}<div class="actions"><a class="btn" href="tel:{{ c.phone|tel }}">Call</a><a class="btn" href="sms:{{ c.phone|tel }}">Text</a></div>{% endif %}</div>
+<form method="post" class="form" novalidate>
+  {{ csrf() }}
+  <div class="sheet">
+    {{ input('name', 'Name', form, errors, required=True, hint='Use the name you’ll type as “Paid to” on expenses.') }}
+    <div class="grid2">
+      {{ select('role', 'Type', form, errors, roles|same) }}
+      {{ input('company', 'Company', form, errors, optional=True) }}
+    </div>
+    <div class="grid2">
+      {{ input('phone', 'Phone', form, errors, type='tel', optional=True) }}
+      {{ input('email', 'Email', form, errors, type='email', optional=True) }}
+    </div>
+    {{ textarea('notes', 'Notes', form, errors, hint='Rates, license or W-9 on file, account numbers…') }}
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save changes' if c else 'Add contact' }}</button>
+    <a class="btn cancel" href="{{ url_for('crm.contacts') }}">Cancel</a>
+  </div>
+</form>
+{% if spent %}
+<section class="sheet form">
+  <div class="sheet-head"><h2>Paid to {{ c.name }}</h2></div>
+  <ul class="rows">{% for e in spent %}
+    <li><a class="row" href="{{ url_for('money.expense_edit', eid=e.id) }}"><span class="title">{{ e.category|cat }}</span>
+      <span class="amt num">{{ e.amount_cents|money }}</span><span class="sub">{{ e.date|d }} · {{ e.property_name or 'All properties' }}</span></a></li>
+  {% endfor %}</ul>
+</section>
+{% endif %}
+{% if c %}
+<form method="post" action="{{ url_for('crm.contact_delete', cid=c.id) }}" class="danger-zone form" data-confirm="Delete {{ c.name }}?">
+  {{ csrf() }}<button class="btn danger" type="submit">Delete contact</button>
+</form>
+{% endif %}
+{% endblock %}

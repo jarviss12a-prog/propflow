@@ -1,0 +1,26 @@
+{% from "_macros.html" import stamp %}
+{# Rent roll rows. Expects: rows, ym, show_actions #}
+<ul class="rows roll">
+  {% for r in rows %}
+  <li>
+    <div class="row">
+      <a class="title" href="{{ url_for('tenants.show', tid=r.lease.tenant_id) }}">{{ r.lease.tenant_name }}</a>
+      <span class="amt num">{{ r.received|money }}</span>
+      <span class="mark">{{ stamp(r.status) }}</span>
+      <span class="sub">{{ r.place }}{% if r.lease.section8 %} · <span class="tag">Section 8</span>{% endif %}</span>
+      <span class="amt-sub num">of {{ r.expected|money }}</span>
+      {% if show_actions and r.status != 'paid' %}
+      <span class="go">
+        {% if r.lease.section8 %}
+          {% if r.received_tenant < r.tenant_expected %}<a class="btn small" href="{{ url_for('money.payment_new', lease_id=r.lease.id, kind='rent', applies_to=ym, next=request.full_path) }}">Record tenant part</a>{% endif %}
+          {% if r.received_hap < r.hap_expected %}<a class="btn small" href="{{ url_for('money.payment_new', lease_id=r.lease.id, kind='hap', applies_to=ym, next=request.full_path) }}">Record HAP</a>{% endif %}
+        {% else %}
+          <a class="btn small" href="{{ url_for('money.payment_new', lease_id=r.lease.id, kind='rent', applies_to=ym, amount=(r.short|plain), next=request.full_path) }}">Record {{ r.short|money }}</a>
+        {% endif %}
+        {% if r.lease.tenant_phone %}<a class="btn small" href="sms:{{ r.lease.tenant_phone|tel }}">Text</a>{% endif %}
+      </span>
+      {% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>

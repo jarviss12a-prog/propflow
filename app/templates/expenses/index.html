@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Expenses {{ year }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Expenses</h1><p class="muted">Money out for {{ year }}, filed by Schedule E line.</p></div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('money.mortgage') }}">Mortgage payment</a>
+    <a class="btn primary" href="{{ url_for('money.expense_new') }}">Log expense</a>
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <label class="sr" for="fy">Year</label>
+  <select id="fy" name="year" onchange="this.form.submit()">{% for y in years %}<option {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+  <label class="sr" for="fp">Property</label>
+  <select id="fp" name="property" onchange="this.form.submit()">
+    <option value="">All properties</option>
+    <option value="shared" {% if pid == 'shared' %}selected{% endif %}>Shared only</option>
+    {% for p in properties %}<option value="{{ p.id }}" {% if pid == p.id|string %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+  </select>
+  <label class="sr" for="fc">Category</label>
+  <select id="fc" name="category" onchange="this.form.submit()">
+    <option value="">All categories</option>
+    {% for c in categories %}<option value="{{ c.key }}" {% if cat == c.key %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+  </select>
+  <noscript><button class="btn small">Show</button></noscript>
+</form>
+
+<div class="cols">
+  <section class="sheet">
+    {% if groups %}
+      {% for m, items in groups.items() %}
+      <div class="month-label" {% if loop.first %}style="border-top:0"{% endif %}><span>{{ m|month }}</span><span class="num">{{ items|sum(attribute='amount_cents')|money }}</span></div>
+      <ul class="rows">
+        {% for r in items %}
+        <li><a class="row" href="{{ url_for('money.expense_edit', eid=r.id) }}">
+          <span class="title">{{ r.vendor or (r.category|cat) }}</span>
+          <span class="amt num">{{ r.amount_cents|money }}</span>
+          <span class="sub">{{ r.date|dshort }} · {{ r.category|cat }}{% if not (r.category|catline) %} <span class="tag grey">not deductible</span>{% endif %} · {{ r.property_name or 'All properties' }}{% if r.n_files %} · receipt{% endif %}</span>
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    {% else %}
+    <div class="empty">No expenses match.<br><a class="btn" href="{{ url_for('money.expense_new') }}">Log an expense</a> <a class="btn" href="{{ url_for('imports.index', kind='expenses') }}">Import from CSV</a></div>
+    {% endif %}
+  </section>
+
+  <section class="sheet">
+    <div class="sheet-head"><h2>By category</h2></div>
+    <dl class="figures">
+      <div><dt>Deductible</dt><dd class="num">{{ deductible|money0 }}</dd></div>
+      <div><dt>Not deductible</dt><dd class="num">{{ other|money0 }}</dd></div>
+    </dl>
+    <ul class="rows">
+      {% for c in categories if by_cat.get(c.key) %}
+      <li><a class="row" href="{{ url_for('money.expenses', year=year, category=c.key, property=pid or None) }}">
+        <span class="title">{{ c.label }}</span><span class="amt num">{{ by_cat[c.key]|money }}</span>
+        <span class="sub">{% if c.line %}Schedule E line {{ c.line }}{% else %}Tracked, not deducted{% endif %}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% if not by_cat %}<div class="empty">Totals show here once you log expenses.</div>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ code }}{% endblock %}
+{% block content %}
+<div class="sheet empty">
+  <h1>{% if code == 404 %}Not found{% elif code == 413 %}File too large{% else %}Something's off{% endif %}</h1>
+  <p>{{ message }}</p>
+  <a class="btn" href="{{ url_for('main.dashboard') }}">Go to Home</a>
+</div>
+{% endblock %}

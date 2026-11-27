@@ -1,0 +1,62 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, input, money, select, textarea, err %}
+{% block title %}{{ 'Edit expense' if row else 'Log expense' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit expense' if row else 'Log expense' }}</h1></div>
+<form method="post" class="form" enctype="multipart/form-data" novalidate>
+  {{ csrf() }}<input type="hidden" name="next" value="{{ form.get('next', '') }}">
+  <input type="hidden" name="maintenance_id" value="{{ form.get('maintenance_id') or '' }}">
+  <div class="sheet">
+    {{ money('amount', 'Amount', form, errors, required=True, attrs='autofocus' if not row else '', hint='Use a minus sign for a refund or credit.') }}
+    <div class="field{% if errors.get('category') %} bad{% endif %}">
+      <label for="f-category">Category</label>
+      <select id="f-category" name="category" required aria-describedby="cat-hint">
+        <option value="">Choose…</option>
+        <optgroup label="Schedule E deductions">
+        {% for c in categories if c.line %}<option value="{{ c.key }}" data-hint="{{ c.hint }}" {% if form.get('category') == c.key %}selected{% endif %}>{{ c.label }} (line {{ c.line }})</option>{% endfor %}
+        </optgroup>
+        <optgroup label="Tracked, not deducted">
+        {% for c in categories if not c.line %}<option value="{{ c.key }}" data-hint="{{ c.hint }}" {% if form.get('category') == c.key %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+        </optgroup>
+      </select>
+      <div class="hint cat-hint" id="cat-hint"></div>
+      {{ err(errors, 'category') }}
+    </div>
+    {{ select('property_id', 'Property', form, errors, properties|pairs('id', 'name'), blank='All properties (shared)', hint='Shared costs, like your CPA or an umbrella policy, are split evenly at tax time.') }}
+    <div class="grid2">
+      {{ input('date', 'Date paid', form, errors, type='date', required=True) }}
+      <div class="field">
+        <label for="f-method">Paid with <span class="opt">(optional)</span></label>
+        <select id="f-method" name="method"><option value="">–</option>
+          {% for m in methods %}<option {% if form.get('method') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    {{ input('vendor', 'Paid to', form, errors, optional=True, attrs='list="vendors" autocomplete="off"', hint='Pick a saved contact to see what you’ve spent with them.') }}
+    <datalist id="vendors">{% for v in vendors %}<option value="{{ v }}">{% endfor %}</datalist>
+    <div class="field">
+      <label for="f-receipt">Receipt <span class="opt">(optional)</span></label>
+      <input id="f-receipt" type="file" name="receipt" accept="image/*,.pdf">
+      <div class="hint">On your phone this opens the camera.</div>
+    </div>
+    {% if files %}
+    <div class="field"><span class="label">Attached</span>
+      {% for fl in files %}<div><a href="{{ url_for('files.download', fid=fl.id) }}" target="_blank" rel="noopener">{{ fl.original_name }}</a></div>{% endfor %}
+    </div>
+    {% endif %}
+    <details class="more-fields" {% if form.get('reference') or form.get('notes') %}open{% endif %}>
+      <summary>Check number, notes</summary>
+      {{ input('reference', 'Check or confirmation #', form, errors, optional=True) }}
+      {{ textarea('notes', 'Notes', form, errors) }}
+    </details>
+  </div>
+  <div class="form-foot">
+    <button class="btn primary" type="submit">{{ 'Save changes' if row else 'Log expense' }}</button>
+    {% if not row %}<button class="btn" type="submit" name="again" value="1">Log and add another</button>{% endif %}
+    <a class="btn cancel" href="{{ form.get('next') or url_for('money.expenses') }}">Cancel</a>
+  </div>
+</form>
+{% if row %}
+<form method="post" action="{{ url_for('money.expense_delete', eid=row.id) }}" class="danger-zone form" data-confirm="Delete this expense and its receipt?">
+  {{ csrf() }}<button class="btn danger" type="submit">Delete expense</button>
+</form>
+{% endif %}
+{% endblock %}

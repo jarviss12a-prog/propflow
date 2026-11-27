@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}
+{% block title %}Maintenance{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Maintenance</h1><p class="muted">{{ open_count }} open. Log a request when a tenant calls, then attach the bill when it's fixed.</p></div>
+  <a class="btn primary" href="{{ url_for('crm.work_new') }}">Add item</a>
+</div>
+<div class="filters">
+  <span class="seg"><a href="{{ url_for('crm.maintenance') }}" aria-current="{{ 'true' if show != 'done' else 'false' }}">Open</a><a href="{{ url_for('crm.maintenance', show='done') }}" aria-current="{{ 'true' if show == 'done' else 'false' }}">Done</a></span>
+</div>
+<section class="sheet">
+  {% if rows %}
+  <ul class="rows">
+    {% for w in rows %}
+    <li {% if loop.first %}style="border-top:0"{% endif %}><div class="row">
+      <a class="title" href="{{ url_for('crm.work_edit', wid=w.id) }}">{{ w.title }}</a>
+      <span class="amt">{% if w.status == 'done' %}{{ w.cost|money if w.cost else '' }}{% elif w.urgent %}<span class="tag red">Urgent</span>{% else %}<span class="tag {{ 'amber' if w.status == 'open' else '' }}">{{ statuses[w.status] }}{% if w.scheduled_for and w.status == 'scheduled' %} {{ w.scheduled_for|dshort }}{% endif %}</span>{% endif %}</span>
+      <span class="sub">{{ w.property_name }}{% if w.tenant_name %} · {{ w.tenant_name }}{% endif %}{% if w.contact_name %} · {{ w.contact_name }}{% endif %} · {{ 'closed ' + (w.closed_on|dshort) if w.status == 'done' else 'opened ' + (w.opened_on|dshort) }}</span>
+      {% if w.status != 'done' %}
+      <span class="go" style="grid-column:1/-1;display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <form method="post" action="{{ url_for('crm.work_done', wid=w.id) }}" class="inline">{{ csrf() }}<input type="hidden" name="next" value="{{ request.full_path }}"><button class="btn small" type="submit">Mark done</button></form>
+        <a class="btn small" href="{{ url_for('money.expense_new', property_id=w.property_id, maintenance_id=w.id, category='repairs', vendor=w.contact_name or '', notes=w.title, next=url_for('crm.work_edit', wid=w.id)) }}">Log the bill</a>
+        {% if w.contact_phone %}<a class="btn small" href="tel:{{ w.contact_phone|tel }}">Call {{ w.contact_name }}</a>{% endif %}
+      </span>
+      {% endif %}
+    </div></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">{{ 'Nothing open.' if show != 'done' else 'Nothing finished yet.' }}</div>
+  {% endif %}
+</section>
+{% endblock %}

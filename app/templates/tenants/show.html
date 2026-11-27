@@ -1,0 +1,103 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, files_block, stamp, icon %}
+{% block title %}{{ t.name }}{% endblock %}
+{% block content %}
+{% set cur = leases|selectattr('current')|first %}
+<div class="page-head">
+  <div><h1>{{ t.name }}</h1>
+    <p class="muted">{% if cur %}{{ cur.place }}{% elif leases %}Former tenant{% else %}No lease{% endif %}
+      {% if t.phone %} · <a href="tel:{{ t.phone|tel }}">{{ t.phone }}</a>{% endif %}{% if t.email %} · <a href="mailto:{{ t.email }}">{{ t.email }}</a>{% endif %}</p></div>
+  <div class="actions">
+    {% if t.phone %}<a class="btn" href="sms:{{ t.phone|tel }}">Text</a>{% endif %}
+    <a class="btn" href="{{ url_for('tenants.edit', tid=t.id) }}">Edit</a>
+    {% if cur %}<a class="btn primary" href="{{ url_for('money.payment_new', lease_id=cur.lease.id, next=request.path) }}">Record payment</a>{% endif %}
+  </div>
+</div>
+
+<div class="cols">
+  <div>
+    {% for lr in leases %}
+    {% set l = lr.lease %}
+    <section class="sheet">
+      <div class="sheet-head">
+        <h2>{{ lr.place }}{% if not lr.current %} <span class="tag grey">{% if l.start_date > today_iso %}Starts {{ l.start_date|dshort }}{% else %}Ended{% endif %}</span>{% endif %}</h2>
+        <a href="{{ url_for('tenants.lease_edit', lid=l.id) }}">Edit lease</a>
+      </div>
+      <dl class="figures">
+        <div><dt>{{ 'Balance' if lr.balance >= 0 else 'Credit' }}</dt><dd class="num {{ 'out' if lr.balance > 0 }}">{{ (lr.balance if lr.balance >= 0 else -lr.balance)|money }}</dd></div>
+        <div><dt>Rent</dt><dd class="num">{{ l.rent_cents|money }}</dd></div>
+        {% if l.section8 %}
+        <div><dt>Tenant pays</dt><dd class="num">{{ (l.rent_cents - l.hap_cents)|money }}</dd></div>
+        <div><dt>HAP pays</dt><dd class="num">{{ l.hap_cents|money }}</dd></div>
+        {% endif %}
+      </dl>
+      <div class="sheet-body" style="padding-top:12px;border-top:1px solid var(--rule)">
+        <dl class="kv">
+          <dt>Lease</dt><dd>{{ l.start_date|d }} to {{ l.end_date|d if l.end_date else 'month to month' }}{% if l.end_date and l.end_date < today_iso and not l.move_out_date %} <span class="tag amber">Now month to month</span>{% endif %}</dd>
+          <dt>Due</dt><dd>Day {{ l.due_day }}, late after {{ l.grace_days }} days{% if l.late_fee_cents %} · {{ l.late_fee_cents|money }} fee{% endif %}</dd>
+          {% if l.deposit_cents %}<dt>Deposit</dt><dd>{{ l.deposit_cents|money }}</dd>{% endif %}
+          {% if l.section8 %}<dt>Section 8</dt><dd>{{ l.housing_authority or 'Housing authority' }}{% if l.s8_case_number %} · #{{ l.s8_case_number }}{% endif %}</dd>{% endif %}
+          {% if l.move_out_date %}<dt>Moved out</dt><dd>{{ l.move_out_date|d }}</dd>{% endif %}
+          <dt>Tracking from</dt><dd>{{ l.ledger_start|month }}{% if l.opening_balance_cents %} with {{ l.opening_balance_cents|money }} carried in{% endif %}</dd>
+        </dl>
+        {% if l.notes %}<p style="margin-top:10px;white-space:pre-line">{{ l.notes }}</p>{% endif %}
+      </div>
+      {% if lr.months %}
+      <ul class="rows roll">
+        {% for m in lr.months %}
+        <li><div class="row">
+          <span class="title">{{ m.ym|month }}</span>
+          <span class="amt num">{{ m.received|money }}</span>
+          <span class="mark">{{ stamp(m.status) }}</span>
+          <span class="amt-sub num">of {{ m.expected|money }}</span>
+          {% if lr.current and m.status in ('late', 'partial', 'due') %}
+          <span class="go"><a class="btn small" href="{{ url_for('money.payment_new', lease_id=l.id, applies_to=m.ym, next=request.path) }}">Record for {{ m.ym|mshort }}</a></span>
+          {% endif %}
+        </div></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if lr.current %}
+      <div class="upload">
+        <form method="post" action="{{ url_for('tenants.move_out', lid=l.id) }}" class="actions" data-confirm="Mark {{ t.name }} as moved out?">
+          {{ csrf() }}<label for="mo-{{ l.id }}" class="muted">Moved out on</label>
+          <input id="mo-{{ l.id }}" type="date" name="move_out_date" value="{{ today_iso }}" style="width:auto">
+          <button class="btn small" type="submit">Mark moved out</button>
+        </form>
+        <a class="btn small" href="{{ url_for('tenants.lease_new', tid=t.id) }}">Renew lease</a>
+      </div>
+      {% endif %}
+    </section>
+    {% else %}
+    <section class="sheet"><div class="empty">No lease on file. <br><a class="btn" href="{{ url_for('tenants.lease_new', tid=t.id) }}">Add a lease</a></div></section>
+    {% endfor %}
+  </div>
+
+  <div>
+    <section class="sheet">
+      <div class="sheet-head"><h2>Payments</h2></div>
+      {% if payments %}
+      <ul class="rows">{% for r in payments %}
+        <li><a class="row" href="{{ url_for('money.payment_edit', pay_id=r.id) }}">
+          <span class="title">{{ r.kind|kind }}{% if r.applies_to %} · {{ r.applies_to|mshort }}{% endif %}</span>
+          <span class="amt num in">{{ r.amount_cents|money }}</span>
+          <span class="sub">{{ r.date|d }}{% if r.method %} · {{ r.method }}{% endif %}</span></a></li>
+      {% endfor %}</ul>
+      {% else %}<div class="empty">No payments yet.</div>{% endif %}
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h2>Maintenance</h2>{% if cur %}<a href="{{ url_for('crm.work_new', property_id=cur.lease.property_id, tenant_id=t.id) }}">Add</a>{% endif %}</div>
+      {% if work %}
+      <ul class="rows">{% for w in work %}
+        <li><a class="row" href="{{ url_for('crm.work_edit', wid=w.id) }}"><span class="title">{{ w.title }}</span>
+          <span class="sub">{{ w.opened_on|dshort }} · {{ w.status|capitalize }}</span></a></li>
+      {% endfor %}</ul>
+      {% else %}<div class="empty">No requests logged.</div>{% endif %}
+    </section>
+
+    {{ files_block(files, 'tenant', t.id, request.path, 'Lease and documents') }}
+
+    {% if t.notes %}<section class="sheet"><div class="sheet-head"><h2>Notes</h2></div><div class="sheet-body" style="white-space:pre-line">{{ t.notes }}</div></section>{% endif %}
+  </div>
+</div>
+{% endblock %}

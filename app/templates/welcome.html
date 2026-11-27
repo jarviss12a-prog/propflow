@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<div class="welcome">
+  <div class="page-head"><div><h1>Let's set up your rentals</h1>
+    <p class="muted">Three steps, then every payment and expense lands on the right Schedule E line.</p></div></div>
+  <section class="sheet"><div class="sheet-body" style="padding-top:16px">
+    <ol>
+      <li><strong>Add your properties.</strong> One at a time, or all seven at once from a spreadsheet.</li>
+      <li><strong>Add tenants and their leases</strong>: rent, due day, deposit and any Section 8 split.</li>
+      <li><strong>Record payments and expenses</strong> as they happen, or import what you already have for this year.</li>
+    </ol>
+    <div class="actions">
+      <a class="btn primary" href="{{ url_for('properties.new') }}">Add a property</a>
+      <a class="btn" href="{{ url_for('imports.index', kind='properties') }}">Import from a spreadsheet</a>
+    </div>
+  </div></section>
+</div>
+{% endblock %}

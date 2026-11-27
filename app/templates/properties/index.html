@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Properties{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ 'Archived properties' if show_archived else 'Properties' }}</h1>
+    <p class="muted">{{ rows|length }} {{ 'archived' if show_archived else 'active' }}{% if not show_archived %} · {{ year }} net is before depreciation{% endif %}</p></div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('imports.index', kind='properties') }}">Import</a>
+    <a class="btn primary" href="{{ url_for('properties.new') }}">Add property</a>
+  </div>
+</div>
+<section class="sheet">
+  {% if rows %}
+  <ul class="rows">
+    {% for r in rows %}
+    <li {% if loop.first %}style="border-top:0"{% endif %}><a class="row" href="{{ url_for('properties.show', pid=r.p.id) }}">
+      <span class="title">{{ r.p.name }}</span>
+      <span class="amt num {{ 'neg' if r.net < 0 }}">{{ r.net|money0 }}</span>
+      <span class="sub">{{ r.p.address }}{% if r.p.city %}, {{ r.p.city }}{% endif %} · {% if r.units > 1 %}{{ r.occupied }} of {{ r.units }} units rented{% elif r.occupied %}Rented{% else %}<span class="out">Vacant</span>{% endif %}</span>
+      <span class="amt-sub num">{{ r.income|money0 }} in</span>
+    </a></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">{% if show_archived %}No archived properties.{% else %}No properties yet.<br><a class="btn primary" href="{{ url_for('properties.new') }}">Add your first property</a>{% endif %}</div>
+  {% endif %}
+</section>
+{% if archived_count and not show_archived %}<p style="margin-top:14px"><a href="{{ url_for('properties.index', archived=1) }}">Show {{ archived_count }} archived</a></p>{% endif %}
+{% if show_archived %}<p style="margin-top:14px"><a href="{{ url_for('properties.index') }}">Back to active properties</a></p>{% endif %}
+{% endblock %}

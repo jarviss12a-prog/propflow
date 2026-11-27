@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}
+{% block title %}Check import{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Check before importing</h1>
+  <p class="muted">{{ label }} · {{ summary.rows }} rows: <strong>{{ summary.ready }} ready</strong>{% if summary.total %} totaling {{ summary.total }}{% endif %}{% if summary.errors %} · <span class="out">{{ summary.errors }} with problems</span>{% endif %}{% if summary.dupes %} · {{ summary.dupes }} already in PropFlow{% endif %}</p></div></div>
+{% if unknown %}<div class="flash error">These columns weren't recognized and will be ignored: {{ unknown|join(', ') }}.</div>{% endif %}
+<section class="sheet">
+  <div class="table-wrap">
+    <table class="ledger preview">
+      <thead><tr><th scope="col">Row</th>{% for c in cols %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for it in items %}
+        <tr><td>{{ it.n }} {% if it.error %}<div class="out" style="font-size:.8125rem;white-space:normal;max-width:260px">{{ it.error }}</div>{% elif it.dupe %}<span class="tag grey">Already added</span>{% else %}<span class="tag">Ready</span>{% endif %}</td>
+          {% for v in it.show %}<td style="text-align:left">{{ v }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<form method="post" action="{{ url_for('imports.commit') }}" class="form-foot" style="margin-top:12px">
+  {{ csrf() }}<input type="hidden" name="token" value="{{ token }}">
+  {% if summary.dupes %}<label class="check" style="width:100%"><input type="checkbox" name="include_dupes" value="1"><span>Also add the {{ summary.dupes }} rows that look already added</span></label>{% endif %}
+  <button class="btn primary" type="submit" {% if not summary.ready and not summary.dupes %}disabled{% endif %}>Add {{ summary.ready }} rows</button>
+  <a class="btn" href="{{ url_for('imports.index', kind=kind) }}">Start over</a>
+</form>
+{% if summary.errors %}<p class="muted">Rows with problems are skipped. Fix them in your sheet and import just those rows again.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% macro icon(name) -%}
+<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{%- endmacro %}
+
+{% macro err(errors, name) -%}
+{% if errors and errors.get(name) %}<div class="err" id="{{ name }}-err">{{ errors[name] }}</div>{% endif %}
+{%- endmacro %}
+
+{% macro input(name, label, form, errors, type="text", hint=None, required=False, optional=False, attrs="", value=None) -%}
+<div class="field{% if errors and errors.get(name) %} bad{% endif %}">
+  <label for="f-{{ name }}">{{ label }}{% if optional %} <span class="opt">(optional)</span>{% endif %}</label>
+  <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value if value is not none else (form.get(name) if form.get(name) is not none else '') }}"
+    {% if required %}required{% endif %} {% if hint %}aria-describedby="{{ name }}-hint"{% endif %} {{ attrs|safe }}>
+  {% if hint %}<div class="hint" id="{{ name }}-hint">{{ hint }}</div>{% endif %}
+  {{ err(errors, name) }}
+</div>
+{%- endmacro %}
+
+{% macro money(name, label, form, errors, hint=None, required=False, optional=False, attrs="") -%}
+<div class="field{% if errors and errors.get(name) %} bad{% endif %}">
+  <label for="f-{{ name }}">{{ label }}{% if optional %} <span class="opt">(optional)</span>{% endif %}</label>
+  <div class="money"><input id="f-{{ name }}" name="{{ name }}" type="text" inputmode="decimal" autocomplete="off"
+    value="{{ form.get(name) if form.get(name) is not none else '' }}" {% if required %}required{% endif %} {{ attrs|safe }}></div>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+  {{ err(errors, name) }}
+</div>
+{%- endmacro %}
+
+{% macro textarea(name, label, form, errors, hint=None, optional=True) -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label }}{% if optional %} <span class="opt">(optional)</span>{% endif %}</label>
+  <textarea id="f-{{ name }}" name="{{ name }}">{{ form.get(name) or '' }}</textarea>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro select(name, label, form, errors, options, blank=None, hint=None, optional=False, attrs="") -%}
+{# options: list of (value, label) #}
+<div class="field{% if errors and errors.get(name) %} bad{% endif %}">
+  <label for="f-{{ name }}">{{ label }}{% if optional %} <span class="opt">(optional)</span>{% endif %}</label>
+  <select id="f-{{ name }}" name="{{ name }}" {{ attrs|safe }}>
+    {% if blank is not none %}<option value="">{{ blank }}</option>{% endif %}
+    {% for v, l in options %}<option value="{{ v }}" {% if form.get(name)|string == v|string %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+  {{ err(errors, name) }}
+</div>
+{%- endmacro %}
+
+{% macro stamp(status) -%}<span class="stamp {{ status }}">{{ status|status }}</span>{%- endmacro %}
+
+{% macro files_block(files, entity_type, entity_id, next_url, title="Files") -%}
+<section class="sheet">
+  <div class="sheet-head"><h2>{{ title }}</h2></div>
+  {% if files %}
+  <ul class="files">
+    {% for fl in files %}
+    <li>{{ icon('file') }}<a href="{{ url_for('files.download', fid=fl.id) }}" target="_blank" rel="noopener">{{ fl.original_name }}</a>
+      <small>{{ fl.size|filesize }}</small>
+      <form method="post" action="{{ url_for('files.delete', fid=fl.id) }}" class="inline" data-confirm="Remove {{ fl.original_name }}?">
+        {{ csrf() }}<input type="hidden" name="next" value="{{ next_url }}"><button class="btn small danger" type="submit">Remove</button>
+      </form></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form class="upload" method="post" action="{{ url_for('files.upload') }}" enctype="multipart/form-data">
+    {{ csrf() }}<input type="hidden" name="entity_type" value="{{ entity_type }}"><input type="hidden" name="entity_id" value="{{ entity_id }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <label class="sr" for="up-{{ entity_type }}-{{ entity_id }}">Choose files</label>
+    <input id="up-{{ entity_type }}-{{ entity_id }}" type="file" name="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt">
+    <button class="btn small" type="submit">Attach</button>
+  </form>
+</section>
+{%- endmacro %}
